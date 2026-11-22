@@ -1,0 +1,205 @@
+# Dossier, build notes for `forge deploy`
+#
+# Before the first deploy:
+#   1. `forge register`, replaces the placeholder app id below with a real one.
+#      Nothing in this repo can know it in advance.
+#   2. `forge deploy -e development`, the CLI checks the runtime id and the
+#      module schema and fails loudly if either has moved.
+#
+# Things this file assumes and must be re-checked when it changes:
+#   * runtime nodejs22.x exists (the CLI says if it does not; fall back nodejs20.x)
+#   * Teamwork Graph scopes are per object type (confirmed against
+#     /platform/teamwork-graph/scopes/, 2026-11). A missing scope returns an
+#     EMPTY result, not an error, so a thinner dossier is the symptom and this
+#     list is the cause.
+#   * `rovo:mcp` is Preview. An app can hold at most one, and external exposure
+#     stays OFF until a site admin turns it on in Connected apps.
+#   * static/ui/vendor/bridge.js is generated. `npm run build:bridge` rebuilds it
+#     only when the @forge/bridge version changes.
+
+app:
+  id: ari:cloud:ecosystem::app/REPLACE_WITH_FORGE_REGISTER
+  runtime:
+    name: nodejs22.x
+  licensing:
+    enabled: false
+
+modules:
+  jira:issuePanel:
+    - key: dossier-issue-panel
+      resource: ui
+      resolver:
+        function: resolver
+      title: Dossier
+      icon: resource:icons;dossier.png
+  jira:globalPage:
+    - key: dossier-console
+      resource: ui
+      resolver:
+        function: resolver
+      title: Dossier
+      icon: resource:icons;dossier.png
+
+  # Every tool the MCP server exposes is one of these actions, and the panel
+  # calls the same service functions underneath them.
+  action:
+    - key: compile-dossier
+      name: Compile a dossier
+      function: rovo
+      actionVerb: GET
+      description: Compile everything an agent needs to work on one issue, inside a token budget. The result cites its sources and states what was left out.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: "The issue to compile, e.g. PROJ-123"
+        budget:
+          title: Token budget
+          type: number
+          required: false
+          description: "Upper bound on the dossier, in estimated tokens (400-8000, default 1500)"
+
+    - key: find-related
+      name: Find related work
+      function: rovo
+      actionVerb: GET
+      description: Find pull requests, goals and issues connected to one issue, formally or by subject, with the reason each one was surfaced.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: "The issue to search outwards from"
+        limit:
+          title: Result limit
+          type: number
+          required: false
+          description: "How many rows to return (1-15, default 8)"
+
+    - key: find-owners
+      name: Find who knows this
+      function: rovo
+      actionVerb: GET
+      description: Rank the people who have actually touched an issue, weighted by recency, so a question goes to someone with evidence rather than whoever is assigned.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: "The issue to rank people for"
+        limit:
+          title: Result limit
+          type: number
+          required: false
+          description: "How many people to return (1-10, default 5)"
+
+    - key: what-changed
+      name: Summarise what changed
+      function: rovo
+      actionVerb: GET
+      description: Summarise status moves, newly opened and resolved work, and stale items for a project or JQL query within a date window.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: "The project to summarise, e.g. PROJ. Leave empty if you pass jql."
+        jql:
+          title: JQL query
+          type: string
+          required: false
+          description: "Optional JQL instead of a whole project"
+        since:
+          title: Since
+          type: string
+          required: false
+          description: "ISO date to start the window from (default: 14 days ago)"
+        staleDays:
+          title: Stale after days
+          type: number
+          required: false
+          description: "Days without movement before an item counts as stale (default 14)"
+
+    - key: publish-dossier
+      name: Publish the dossier
+      function: rovo
+      actionVerb: UPDATE
+      description: Compile a dossier and post it as a comment on the issue, so the team can see exactly what an agent was working from.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: "The issue to post on"
+        budget:
+          title: Token budget
+          type: number
+          required: false
+          description: "Upper bound on the dossier, in estimated tokens (400-8000, default 1500)"
+
+  # One agent, one job: it reads before it acts.
+  rovo:agent:
+    - key: compiler
+      name: Compiler
+      description: Compiles the context behind an issue into a short, sourced brief before any work starts.
+      icon: resource:icons;dossier.png
+      prompt: resource:prompt;compiler.md
+      conversationStarters:
+        - Compile a dossier for the issue I am about to work on
+        - Who actually knows this area?
+        - What changed in this project since last week?
+      skills:
+        - jira-dossier
+
+  # Reusable instructions any Forge agent can attach, backed by the same tools.
+  rovo:skill:
+    - key: jira-dossier
+      source:
+        dir: skills/jira-dossier
+      dependencies:
+        tools:
+          - compile-dossier
+          - find-related
+          - find-owners
+          - what-changed
+          - publish-dossier
+
+  # The same five tools, exposed to any MCP-compatible client.
+  rovo:mcp:
+    - key: dossier-mcp
+      name: Dossier
+      tools:
+        - compile-dossier
+        - find-related
+        - find-owners
+        - what-changed
+        - publish-dossier
+
+  function:
+    - key: resolver
+      handler: index.resolver
+    - key: rovo
+      handler: index.rovo
+
+resources:
+  # One resource, two surfaces. `app.js` reads the Forge context and renders
+  # either the issue panel or the console, so the two can never drift apart.
+  - key: ui
+    path: static/ui
+  - key: icons
+    path: static/icons
+  - key: prompt
+    path: static/prompt
+
+permissions:
+  scopes:
+    # The dossier can only contain what the person asking is allowed to see.
+    - read:jira-work
+    # publish-dossier is the only write.
+    - write:jira-work
+    # Teamwork Graph is scoped per object type, and a scope is needed for every
+    # object type a field returns as well as the one it starts from.
+    - read:graph:issue:jira
+    - read:graph:pull-request:external
+    - read:graph:goal:atlassian
