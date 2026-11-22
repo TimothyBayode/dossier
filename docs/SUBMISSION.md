@@ -110,7 +110,12 @@ empty result rather than an error.
 See `docs/DISTRIBUTION.md` for the runbook. The short version: the production
 app is deployed and shareable by link; judges install from the link on the
 project page with **`&product=jira`** on the end, then open an issue panel or
-the console. No configuration is needed beyond installing.
+the console. No configuration is needed for the panel.
+
+To exercise the MCP tools, a **site admin** must first enable external exposure
+for this installation in *Apps > Sites > your site > Connected apps*; the
+endpoint and the exact steps are in `docs/MCP.md`. This is a platform toggle,
+not app configuration, and it is off by default.
 
 ## Submitting, in order
 

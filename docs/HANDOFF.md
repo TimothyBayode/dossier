@@ -52,15 +52,15 @@ first written:
 
 ## What does not exist yet
 
-- A registered Forge app id and a live deploy. `forge` is not installed on the
-  development host yet; `npm i -g @forge/cli` first.
+- Production deploy and the shareable install link. Development is deployed and
+  the app id is registered; `docs/MCP.md` covers the MCP proof runbook.
 - `docs/DEMO_VIDEO.md` was written as a script; the video itself is not filmed
 - A GitHub remote
 
 ## Your first hour, in order
 
 1. `npm install` (if `node_modules` is missing or the earlier install died).
-2. `npm test`, expect nine suites and 79 passing tests. Fix anything red before
+2. `npm test`, expect nine suites and 82 passing tests. Fix anything red before
    touching anything else; a red service test usually means a stub in
    `tests/service.test.js` no longer matches the service, not a bug in the
    domain.
@@ -68,14 +68,16 @@ first written:
 4. The icon and the vendored bridge already exist. Regenerate them only if you
    change the mark or the bridge version: `npm run make:icon`, then
    `npm run build:bridge`.
-5. `forge register`, writes the real app id over the
-   `REPLACE_WITH_FORGE_REGISTER` placeholder in `manifest.yml`. There is no CLI
-   flag for the app name; it prompts. This is the only step that needs the
-   owner's Atlassian account.
-6. `forge deploy -e development` (the bridge is already built and committed).
-7. Install on a real site and open the issue panel once. Then
+5. Registration and a development deploy are done (app id
+   `7d47fbd2-2e74-42ab-b5bb-027d1033a6ae`). For a fresh environment,
+   `forge register` writes a new id over the current one; it prompts for the app
+   name and needs the owner's Atlassian account.
+6. `forge deploy -e development` after any change (the bridge is already built
+   and committed). `forge deploy -e production` before sharing the install link.
+7. Open the issue panel once on a real site. Then
    `forge logs -e development -s 10m -n 200` to distinguish "nothing linked"
-   from "query refused", the graph fails silently by design.
+   from "query refused", the graph fails silently by design. The MCP proof is in
+   `docs/MCP.md`.
 
 ## Decisions the plan leaves open
 
