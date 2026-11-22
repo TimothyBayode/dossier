@@ -18,7 +18,7 @@
 #     only when the @forge/bridge version changes.
 
 app:
-  id: ari:cloud:ecosystem::app/REPLACE_WITH_FORGE_REGISTER
+  id: ari:cloud:ecosystem::app/7d47fbd2-2e74-42ab-b5bb-027d1033a6ae
   runtime:
     name: nodejs22.x
   licensing:
@@ -47,7 +47,8 @@ modules:
       name: Compile a dossier
       function: rovo
       actionVerb: GET
-      description: Compile everything an agent needs to work on one issue, inside a token budget. The result cites its sources and states what was left out.
+      description: Compile everything an agent needs to work on one issue, inside a
+        token budget. The result cites its sources and states what was left out.
       inputs:
         issueKey:
           title: Issue key
@@ -58,13 +59,15 @@ modules:
           title: Token budget
           type: number
           required: false
-          description: "Upper bound on the dossier, in estimated tokens (400-8000, default 1500)"
+          description: "Upper bound on the dossier, in estimated tokens (400-8000, default
+            1500)"
 
     - key: find-related
       name: Find related work
       function: rovo
       actionVerb: GET
-      description: Find pull requests, goals and issues connected to one issue, formally or by subject, with the reason each one was surfaced.
+      description: Find pull requests, goals and issues connected to one issue,
+        formally or by subject, with the reason each one was surfaced.
       inputs:
         issueKey:
           title: Issue key
@@ -81,7 +84,9 @@ modules:
       name: Find who knows this
       function: rovo
       actionVerb: GET
-      description: Rank the people who have actually touched an issue, weighted by recency, so a question goes to someone with evidence rather than whoever is assigned.
+      description: Rank the people who have actually touched an issue, weighted by
+        recency, so a question goes to someone with evidence rather than whoever
+        is assigned.
       inputs:
         issueKey:
           title: Issue key
@@ -98,7 +103,8 @@ modules:
       name: Summarise what changed
       function: rovo
       actionVerb: GET
-      description: Summarise status moves, newly opened and resolved work, and stale items for a project or JQL query within a date window.
+      description: Summarise status moves, newly opened and resolved work, and stale
+        items for a project or JQL query within a date window.
       inputs:
         projectKey:
           title: Project key
@@ -125,7 +131,8 @@ modules:
       name: Publish the dossier
       function: rovo
       actionVerb: UPDATE
-      description: Compile a dossier and post it as a comment on the issue, so the team can see exactly what an agent was working from.
+      description: Compile a dossier and post it as a comment on the issue, so the
+        team can see exactly what an agent was working from.
       inputs:
         issueKey:
           title: Issue key
@@ -136,13 +143,15 @@ modules:
           title: Token budget
           type: number
           required: false
-          description: "Upper bound on the dossier, in estimated tokens (400-8000, default 1500)"
+          description: "Upper bound on the dossier, in estimated tokens (400-8000, default
+            1500)"
 
   # One agent, one job: it reads before it acts.
   rovo:agent:
     - key: compiler
       name: Compiler
-      description: Compiles the context behind an issue into a short, sourced brief before any work starts.
+      description: Compiles the context behind an issue into a short, sourced brief
+        before any work starts.
       icon: resource:icons;dossier.png
       prompt: resource:prompt;compiler.md
       conversationStarters:
